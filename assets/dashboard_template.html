@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório FileSort Pro</title>
+    <link rel="stylesheet" href="assets/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Dashboard FileSort Pro</h1>
+
+        <div class="cards">
+            <div class="card">
+                <h3>Total Arquivos Movidos</h3>
+                <p id="total-files">0</p>
+            </div>
+            <div class="card">
+                <h3>Espaço Organizado</h3>
+                <p id="total-size">0 MB</p>
+            </div>
+            <div class="card">
+                <h3>Última Execução</h3>
+                <p id="last-run">-</p>
+            </div>
+        </div>
+
+        <div class="charts-area">
+            <div class="chart-box">
+                <canvas id="filesChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <canvas id="historyChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const dadosHistorico = {{DADOS_JSON}}; 
+        const ultimaExecucao = dadosHistorico[dadosHistorico.length - 1];
+        document.getElementById('total-files').innerText = ultimaExecucao.total_movidos;
+        
+        const mb = (ultimaExecucao.tamanho_total_bytes / (1024 * 1024)).toFixed(2);
+        document.getElementById('total-size').innerText = mb + " MB";
+        document.getElementById('last-run').innerText = ultimaExecucao.data_legivel + " às " + ultimaExecucao.hora_legivel;
+
+        const ctx1 = document.getElementById('filesChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(ultimaExecucao.categorias),
+                datasets: [{
+                    label: 'Arquivos',
+                    data: Object.values(ultimaExecucao.categorias),
+                    backgroundColor: ['#f9e2af', '#89b4fa', '#a6e3a1', '#f38ba8', '#cba6f7'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom', labels: { color: '#cdd6f4' } }, title: { display: true, text: 'Distribuição por Categoria', color: '#cdd6f4' } }
+            }
+        });
+
+        const ultimos10 = dadosHistorico.slice(-15);
+        
+        new Chart(document.getElementById('historyChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: ultimos10.map(d => d.data_legivel + ' ' + d.hora_legivel),
+                datasets: [{
+                    label: 'Arquivos Organizados',
+                    data: ultimos10.map(d => d.total_movidos),
+                    borderColor: '#89b4fa',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(137, 180, 250, 0.2)'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false }, title: { display: true, text: 'Histórico de Execuções', color: '#cdd6f4' } },
+                scales: { x: { ticks: { display: false } }, y: { ticks: { color: '#a6adc8' }, beginAtZero: true } }
+            }
+        });
+    </script>
+</body>
+</html>
